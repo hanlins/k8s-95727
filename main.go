@@ -9,15 +9,17 @@ import (
 
 func main() {
 	var containerID string
+	var endpoint string
 	var interval int64
 	var verbose bool
 
 	flag.StringVar(&containerID, "id", "fake", "container id")
+	flag.StringVar(&endpoint, "ep", "/var/run/containerd/containerd.sock", "container runtime endpoint")
 	flag.Int64Var(&interval, "int", 5000, "loop interval in ms")
 	flag.BoolVar(&verbose, "v", false, "verbose output")
 	flag.Parse()
 
-	rs, err := remote.NewRemoteRuntimeService("/var/run/containerd/containerd.sock", time.Minute)
+	rs, err := remote.NewRemoteRuntimeService(endpoint, time.Minute)
 	if err != nil {
 		fmt.Printf("NewRemoteRuntimeService err: %+v\n", err)
 		return
