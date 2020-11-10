@@ -51,6 +51,8 @@ replace k8s.io/sample-cli-plugin => k8s.io/sample-cli-plugin v0.19.3
 replace k8s.io/sample-controller => k8s.io/sample-controller v0.19.3
 
 require (
+	github.com/hanlins/xray v0.0.0-20201110000135-79473a8b25fb
+	google.golang.org/grpc v1.27.0
 	k8s.io/cri-api v0.0.0
 	k8s.io/kubernetes v1.19.3
 )
