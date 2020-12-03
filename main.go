@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	internalapi "k8s.io/cri-api/pkg/apis"
+	"k8s.io/kubernetes/pkg/kubelet/cadvisor"
 	"k8s.io/kubernetes/pkg/kubelet/cri/remote"
 	"sync"
 	"time"
@@ -35,6 +36,15 @@ func checkRuntimeStatus(rs internalapi.RuntimeService, verbose bool) {
 	}
 }
 
+func checkCadvisor(cad cadvisor.Interface) {
+	_, err := cad.MachineInfo()
+	if err != nil {
+		fmt.Printf("cadvisor machine status err: %+v\n", err)
+	} else {
+		fmt.Println("cadvisor status ok")
+	}
+}
+
 func main() {
 	var containerID string
 	var endpoint string
@@ -55,6 +65,18 @@ func main() {
 	var wg sync.WaitGroup
 
 	rs, err := remote.NewRemoteRuntimeService(endpoint, time.Minute)
+
+	// cadvisor
+	imageFsInfoProvider := cadvisor.NewImageFsInfoProvider("remote", "/var/run/containerd/containerd.sock")
+	cAdvisorIface, err := cadvisor.New(imageFsInfoProvider, "/var/lib/kubelet", []string{"/kubepods", "/system.slice/kubelet.service"}, false)
+	if err != nil {
+		panic(err)
+	}
+	err = cAdvisorIface.Start()
+	if err != nil {
+		panic(err)
+	}
+
 	if err != nil {
 		fmt.Printf("NewRemoteRuntimeService err: %+v\n", err)
 		return
@@ -67,6 +89,7 @@ func main() {
 			for {
 				if rtStatus {
 					checkRuntimeStatus(rs, verbose)
+					checkCadvisor(cAdvisorIface)
 				} else {
 					checkContainerStatus(rs, containerID, verbose)
 				}
