@@ -1,18 +1,12 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
-	"google.golang.org/grpc"
 	internalapi "k8s.io/cri-api/pkg/apis"
 	"k8s.io/kubernetes/pkg/kubelet/cri/remote"
-	"net"
 	"sync"
 	"time"
-
-	"github.com/hanlins/xray"
-	"github.com/hanlins/xray/dot"
 )
 
 func checkContainerStatus(rs internalapi.RuntimeService, containerID string, verbose bool) {
@@ -39,24 +33,6 @@ func checkRuntimeStatus(rs internalapi.RuntimeService, verbose bool) {
 			fmt.Println("runtime status ok")
 		}
 	}
-
-	s := xray.NewScanner(nil)
-	nodeCh := s.Scan(rs)
-	g, _ := dot.Draw(dot.NewGraphInfo(s), nodeCh, nil)
-	fmt.Printf("dot object:\n%s\n", g)
-}
-
-func dialer(ctx context.Context, addr string) (net.Conn, error) {
-	return (&net.Dialer{}).DialContext(ctx, "unix", addr)
-}
-
-func dialEp(endpoint string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	defer cancel()
-
-	var maxMsgSize = 1024 * 1024 * 16
-	_, err := grpc.DialContext(ctx, endpoint, grpc.WithInsecure(), grpc.WithContextDialer(dialer), grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxMsgSize)))
-	return err
 }
 
 func main() {
@@ -89,12 +65,6 @@ func main() {
 		go func() {
 			// loop for container
 			for {
-				err := dialEp(endpoint)
-				if err != nil {
-					fmt.Printf("diap endpoint '%s' error: %v\n", endpoint, err)
-				} else {
-					fmt.Printf("diap endpoint '%s' success\n", endpoint)
-				}
 				if rtStatus {
 					checkRuntimeStatus(rs, verbose)
 				} else {
