@@ -53,6 +53,10 @@ const (
 	connectionTimeout = 2 * time.Second
 )
 
+func dial(ctx context.Context, addr string) (net.Conn, error) {
+	return (&net.Dialer{}).DialContext(ctx, "unix", addr)
+}
+
 // Client creates a containerd client
 func Client(address, namespace string) (ContainerdClient, error) {
 	var retErr error
@@ -70,9 +74,11 @@ func Client(address, namespace string) (ContainerdClient, error) {
 				MaxDelay:  maxBackoffDelay,
 			},
 		}
+
 		gopts := []grpc.DialOption{
 			grpc.WithInsecure(),
-			grpc.WithContextDialer(dialer.ContextDialer),
+			// grpc.WithContextDialer(dialer.ContextDialer),
+			grpc.WithContextDialer(dial),
 			grpc.WithBlock(),
 			grpc.WithConnectParams(connParams),
 		}
